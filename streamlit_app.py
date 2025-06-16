@@ -94,7 +94,18 @@ def page_dashboard():
     c3.metric("Accuracy", f"{stats['correct_answers']/max(stats['total_questions'],1)*100:.1f}%")
     c4.metric("Current Level", stats["current_level"])
 
-    # charts
+    # Daily streak counter
+    streak_data = db.get_user_streak_data(st.session_state.user_id)
+    streak_count = streak_data["streak_count"]
+    last_login_date = streak_data["last_login_date"]
+    today = datetime.now().date()
+
+    if last_login_date != today:
+        st.warning("You haven't logged in today! Make sure to log in daily to maintain your streak.")
+    else:
+        st.success(f"🎉 Daily Streak: {streak_count} days")
+
+    # Charts
     c1, c2 = st.columns(2)
     with c1:
         st.subheader("Progress Over Time")
