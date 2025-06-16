@@ -1,10 +1,9 @@
-
 import os, json, random, streamlit as st
 try:
     import openai
 except ImportError:
     openai = None
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 class AIEngine:
     def __init__(self):
@@ -40,3 +39,35 @@ class AIEngine:
         correct = random.choice(options)
         return {"question": f"Sample {topic} question", "options": options,
                 "correct_answer": correct, "explanation": "placeholder"}
+
+    def generate_quiz_questions(self, content: str) -> List[Dict[str, Any]]:
+        """
+        Generates multiple-choice quiz questions based on the provided content.
+        """
+        # Example implementation (replace with actual AI logic)
+        questions = [
+            {
+                "question": "What is the main topic of the content?",
+                "options": ["Option A", "Option B", "Option C", "Option D"],
+                "correct_answer": "Option A",
+                "explanation": "Explanation for the correct answer."
+            },
+            # Add more questions dynamically based on content
+        ]
+        return questions
+
+    def generate_similar_questions(self, incorrect_questions: List[str]) -> List[Dict[str, Any]]:
+        """
+        Generates similar questions based on the incorrect ones.
+        """
+        # Example implementation (replace with actual AI logic)
+        similar_questions = [
+            {
+                "question": f"Similar question to: {q}",
+                "options": ["Option A", "Option B", "Option C", "Option D"],
+                "correct_answer": "Option B",
+                "explanation": "Explanation for the correct answer."
+            }
+            for q in incorrect_questions
+        ]
+        return similar_questions

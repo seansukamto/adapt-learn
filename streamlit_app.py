@@ -1,5 +1,7 @@
 
 import streamlit as st
+import streamlit.components.v1 as components
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -129,9 +131,164 @@ def page_dashboard():
 
 def page_learn():
     st.header("📚 Learning Hub")
+
     subjects = APP_CONFIG["subjects"]
     subj = st.selectbox("Subject", list(subjects.keys()))
     topic = st.selectbox("Topic", subjects[subj])
+
+    # --- Webcam drag-and-drop interaction ---
+    st.subheader("🖐️ Drag the Boxes with Your Hand (via Webcam)")
+
+    components.html("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        video, canvas {
+          position: absolute;
+          top: 0;
+          left: 0;
+        }
+        #wrapper {
+          position: relative;
+          width: 640px;
+          height: 480px;
+        }
+      </style>
+    </head>
+    <body>
+    <div id="wrapper">
+      <video id="video" width="640" height="480" autoplay playsinline muted></video>
+      <canvas id="canvas" width="640" height="480"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+    <script>
+      const video = document.getElementById("video");
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+
+      let draggingBox = null;
+      let merged = false;
+
+      let boxes = [
+        { id: 1, x: 100, y: 200, size: 80, color: 'blue' },
+        { id: 2, x: 400, y: 200, size: 80, color: 'yellow' }
+      ];
+
+      function drawScene(landmarks) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        for (const box of boxes) {
+          ctx.fillStyle = box.color;
+          ctx.fillRect(box.x, box.y, box.size, box.size);
+        }
+
+        if (landmarks) {
+          for (const point of landmarks) {
+            ctx.beginPath();
+            ctx.arc(point.x * canvas.width, point.y * canvas.height, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = "red";
+            ctx.fill();
+          }
+        }
+      }
+
+      function isPinching(landmarks) {
+        const dx = landmarks[4].x - landmarks[8].x;
+        const dy = landmarks[4].y - landmarks[8].y;
+        return Math.sqrt(dx * dx + dy * dy) < 0.05;
+      }
+
+      function checkCollision(boxA, boxB) {
+        return (
+          boxA.x < boxB.x + boxB.size &&
+          boxA.x + boxA.size > boxB.x &&
+          boxA.y < boxB.y + boxB.size &&
+          boxA.y + boxA.size > boxB.y
+        );
+      }
+
+      function mergeBoxes() {
+        const b1 = boxes[0], b2 = boxes[1];
+        const minX = Math.min(b1.x, b2.x);
+        const minY = Math.min(b1.y, b2.y);
+        const maxX = Math.max(b1.x + b1.size, b2.x + b2.size);
+        const maxY = Math.max(b1.y + b1.size, b2.y + b2.size);
+
+        boxes = [{
+          id: "merged",
+          x: minX,
+          y: minY,
+          size: Math.max(maxX - minX, maxY - minY),
+          color: "green"
+        }];
+        merged = true;
+      }
+
+      function updateDragging(landmarks) {
+        const x = landmarks[8].x * canvas.width;
+        const y = landmarks[8].y * canvas.height;
+
+        if (draggingBox && isPinching(landmarks)) {
+          draggingBox.x = x - draggingBox.size / 2;
+          draggingBox.y = y - draggingBox.size / 2;
+        } else {
+          draggingBox = null;
+          if (!merged && isPinching(landmarks)) {
+            for (let box of boxes) {
+              if (
+                x >= box.x && x <= box.x + box.size &&
+                y >= box.y && y <= box.y + box.size
+              ) {
+                draggingBox = box;
+                break;
+              }
+            }
+          }
+        }
+
+        if (!merged && boxes.length === 2 && checkCollision(boxes[0], boxes[1])) {
+          mergeBoxes();
+        }
+      }
+
+      const hands = new Hands({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+      });
+
+      hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.7,
+        minTrackingConfidence: 0.5,
+      });
+
+      hands.onResults((results) => {
+        if (results.multiHandLandmarks.length > 0) {
+          const landmarks = results.multiHandLandmarks[0];
+          updateDragging(landmarks);
+          drawScene(landmarks);
+        } else {
+          drawScene(null);
+          draggingBox = null;
+        }
+      });
+
+      const camera = new Camera(video, {
+        onFrame: async () => await hands.send({ image: video }),
+        width: 640,
+        height: 480,
+      });
+      camera.start();
+    </script>
+    </body>
+    </html>
+    """, height=500)
+
+    # --- Content generation from subject/topic ---
+    st.subheader("🎯 Personalised Learning Content")
     if st.button("Generate Content"):
         lvl = db.get_user_topic_level(st.session_state.user_id, subj, topic)
         with st.spinner("Generating personalised lesson…"):
@@ -140,6 +297,51 @@ def page_learn():
         if st.button("Take Quiz"):
             st.session_state.quiz_topic = {"subject": subj, "topic": topic}
             st.switch_page("🧩 Quiz")
+
+    # --- File Upload & Quiz Generation ---
+    st.subheader("📄 Upload Content for Quiz Generation")
+    uploaded_file = st.file_uploader("Upload a text file or document", type=["txt", "pdf", "docx"])
+
+    if uploaded_file:
+        def extract_file_content(file):
+            if file.name.endswith(".txt"):
+                return file.read().decode("utf-8")
+            elif file.name.endswith(".pdf"):
+                import PyPDF2
+                reader = PyPDF2.PdfReader(file)
+                return "".join(page.extract_text() for page in reader.pages)
+            elif file.name.endswith(".docx"):
+                import docx
+                doc = docx.Document(file)
+                return "\n".join(paragraph.text for paragraph in doc.paragraphs)
+            else:
+                raise ValueError("Unsupported file format.")
+
+        with st.spinner("Processing file..."):
+            content = extract_file_content(uploaded_file)
+        st.success("File uploaded successfully!")
+
+        if st.button("Generate Quiz"):
+            quiz_questions = ai_engine.generate_quiz_questions(content)
+            st.session_state.quiz_questions = quiz_questions
+            st.session_state.quiz_attempts = []
+            st.success("Quiz generated! Navigate to the Quiz page to start.")
+
+    # --- Retest Functionality ---
+    if st.session_state.get("quiz_attempts"):
+        st.subheader("🔁 Retest on Incorrect Questions")
+        if st.button("Retest"):
+            incorrect_questions = [
+                attempt["question"] for attempt in st.session_state.quiz_attempts if not attempt["is_correct"]
+            ]
+            if incorrect_questions:
+                retest_questions = ai_engine.generate_similar_questions(incorrect_questions)
+                st.session_state.quiz_questions = retest_questions
+                st.success("Retest questions generated! Navigate to the Quiz page to start.")
+            else:
+                st.info("No incorrect questions to retest.")
+
+
 
 def page_quiz():
     st.header("🧩 Adaptive Quiz")
@@ -203,6 +405,27 @@ def page_settings():
             st.success("Saved!")
             st.rerun()
 
+def extract_file_content(uploaded_file) -> str:
+    """
+    Extracts text content from the uploaded file.
+    Supports .txt, .pdf, and .docx formats.
+    """
+    try:
+        if uploaded_file.name.endswith(".txt"):
+            return uploaded_file.read().decode("utf-8")
+        elif uploaded_file.name.endswith(".pdf"):
+            import PyPDF2
+            reader = PyPDF2.PdfReader(uploaded_file)
+            return "".join(page.extract_text() for page in reader.pages)
+        elif uploaded_file.name.endswith(".docx"):
+            import docx
+            doc = docx.Document(uploaded_file)
+            return "\n".join(paragraph.text for paragraph in doc.paragraphs)
+        else:
+            raise ValueError("Unsupported file format.")
+    except Exception as e:
+        raise ValueError(f"Error processing file: {e}")
+    
 # ---- Main ---------------------------------------------------------------
 
 def main():
