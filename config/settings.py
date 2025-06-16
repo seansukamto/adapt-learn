@@ -4,7 +4,7 @@ APP_CONFIG = {
     "version": "1.0",
     "subjects": {
         "Mathematics": ["Arithmetic","Algebra","Geometry"],
-        "Science": ["Physics","Chemistry"]
+        "Science": ["Biology","Chemistry"]
     },
     "learning_styles": ["Visual","Auditory","Kinesthetic","Mixed"]
 }

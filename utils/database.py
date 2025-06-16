@@ -41,9 +41,18 @@ class DatabaseManager:
                 UNIQUE(user_id,subject,topic)
             )""")
             # Add streak_count and last_login_date columns if they don't exist
-            c.execute("ALTER TABLE users ADD COLUMN streak_count INTEGER DEFAULT 0")
-            c.execute("ALTER TABLE users ADD COLUMN last_login_date DATE")
+            # c.execute("ALTER TABLE users ADD COLUMN streak_count INTEGER DEFAULT 0")
+            # c.execute("ALTER TABLE users ADD COLUMN last_login_date DATE")
+            c.execute("PRAGMA table_info(users)")
+            columns = [row[1] for row in c.fetchall()]
+
+            if "streak_count" not in columns:
+                c.execute("ALTER TABLE users ADD COLUMN streak_count INTEGER DEFAULT 0")
+
+            if "last_login_date" not in columns:
+                c.execute("ALTER TABLE users ADD COLUMN last_login_date DATE")
             conn.commit()
+            
     # user helpers
     def create_user(self, name:str, style:str)->int:
         with sqlite3.connect(self.db_path) as conn:
