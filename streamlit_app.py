@@ -105,7 +105,10 @@ def page_dashboard():
     if last_login_date != today:
         st.warning("You haven't logged in today! Make sure to log in daily to maintain your streak.")
     else:
-        st.success(f"🎉 Daily Streak: {streak_count} days")
+        if streak_count == 1:
+          st.success(f"🎉 Daily Streak: {streak_count} day")
+        else:
+          st.success(f"🎉 Daily Streak: {streak_count} days")
 
     # Charts
     c1, c2 = st.columns(2)
@@ -147,7 +150,7 @@ def page_learn():
         <title>Genetics Drag and Drop</title>
         <style>
           body { font-family: sans-serif; margin: 0; padding: 20px; }
-          .container { display: flex; flex-wrap: wrap; width: 640px; gap: 10px; }
+          .container { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
           .flower, .zone, .child {
             width: 80px;
             height: 80px;
@@ -161,8 +164,10 @@ def page_learn():
             user-select: none;
           }
           .flower { border: 2px solid black; }
-          .zone { background: #eee; color: black; border: 2px dashed #aaa; }
-          #children { margin-top: 20px; display: flex; gap: 10px; }
+          .zone { background: #eee; color: white; border: 2px dashed #aaa; }
+          .label { width: 100px; font-weight: bold; }
+          #children-container { display: flex; align-items: center; margin-top: 20px; gap: 10px; }
+          #children { display: flex; gap: 10px; flex-wrap: wrap; }
         </style>
       </head>
       <body>
@@ -178,16 +183,22 @@ def page_learn():
         <div class="flower" draggable="true" data-geno="pp" style="background: gray;">pp</div>
       </div>
 
-      <h4>Parents:</h4>
+      <br>
+
       <div class="container">
+        <div class="label">Parents:</div>
         <div class="zone" id="parentA" ondragover="event.preventDefault()" ondrop="drop(event, 'A')">Parent A</div>
         <div class="zone" id="parentB" ondragover="event.preventDefault()" ondrop="drop(event, 'B')">Parent B</div>
       </div>
 
-      <div id="children"></div>
+      <div id="children-container">
+        <div class="label">Offspring:</div>
+        <div id="children"></div>
+      </div>
 
       <script>
       let parents = { A: null, B: null };
+      const colors = { PP: 'purple', Pp: 'orchid', pp: 'gray' };
 
       document.querySelectorAll('.flower').forEach(f => {
         f.addEventListener('dragstart', (e) => {
@@ -198,7 +209,11 @@ def page_learn():
       function drop(e, zone) {
         const geno = e.dataTransfer.getData('text/plain');
         parents[zone] = geno;
-        document.getElementById('parent' + zone).textContent = geno;
+
+        const box = document.getElementById('parent' + zone);
+        box.textContent = geno;
+        box.style.background = colors[geno] || '#eee';
+
         if (parents.A && parents.B) showChildren();
       }
 
@@ -220,15 +235,17 @@ def page_learn():
           }
         }
 
-        const colors = { PP: 'purple', Pp: 'orchid', pp: 'gray' };
-        const out = combos.map(g => `<div class='child flower' style='background:${colors[g]}'>${g}</div>`).join('');
-        document.getElementById('children').innerHTML = "<h4>Children:</h4><div class='container'>" + out + "</div>";
+        const out = combos.map(g =>
+          `<div class='child flower' style='background:${colors[g]}'>${g}</div>`
+        ).join('');
+        document.getElementById('children').innerHTML = out;
       }
       </script>
 
       </body>
       </html>
-      """, height=500)
+      """, height=520)
+
 
       
     elif subj == "Science" and topic == "Chemistry":

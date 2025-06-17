@@ -1,5 +1,5 @@
 import sqlite3, os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from typing import Dict, Any, List
 
 class DatabaseManager:
@@ -47,17 +47,20 @@ class DatabaseManager:
             columns = [row[1] for row in c.fetchall()]
 
             if "streak_count" not in columns:
-                c.execute("ALTER TABLE users ADD COLUMN streak_count INTEGER DEFAULT 0")
+                c.execute("ALTER TABLE users ADD COLUMN streak_count INTEGER DEFAULT 1")
 
             if "last_login_date" not in columns:
                 c.execute("ALTER TABLE users ADD COLUMN last_login_date DATE")
             conn.commit()
-            
+
     # user helpers
-    def create_user(self, name:str, style:str)->int:
+    def create_user(self, name: str, style: str) -> int:
         with sqlite3.connect(self.db_path) as conn:
-            cur=conn.cursor()
-            cur.execute("INSERT INTO users (name,learning_style) VALUES(?,?)",(name,style))
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO users (name, learning_style, streak_count, last_login_date) VALUES (?, ?, ?, ?)",
+                (name, style, 1, datetime.now().date().strftime("%Y-%m-%d"))
+            )
             return cur.lastrowid
     
     def get_user(self, uid:int)->Dict[str,Any]:
@@ -153,18 +156,29 @@ class DatabaseManager:
             """, (uid,))
             row = cur.fetchone()
             
-            # If no data exists, initialize streak count and last login date
             if not row:
-                return {"streak_count": 0, "last_login_date": None}
-            
+                return {
+                    "streak_count": 1,
+                    "last_login_date": date.today()
+                }
+
             streak_count = row["streak_count"]
-            last_login_date = row["last_login_date"]
-            
-            # Convert last_login_date to a Python date object
-            if last_login_date:
-                last_login_date = datetime.strptime(last_login_date, "%Y-%m-%d").date()
-            
-            return {"streak_count": streak_count, "last_login_date": last_login_date}
+            if not streak_count:  
+                streak_count = 1
+            last_login_str = row["last_login_date"]
+
+            if last_login_str:
+                try:
+                    last_login_date = datetime.strptime(last_login_str, "%Y-%m-%d").date()
+                except ValueError:
+                    last_login_date = date.today()  # fallback if malformed
+            else:
+                last_login_date = date.today()  # fallback if null
+
+            return {
+                "streak_count": streak_count,
+                "last_login_date": last_login_date
+            }
 
     def update_user_login(self, uid: int):
         """
