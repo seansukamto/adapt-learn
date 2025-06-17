@@ -20,7 +20,7 @@ class AIEngine:
             except Exception as e:
                 st.error(str(e))
         # fallback
-        return f"### {topic}\nThis is placeholder content for {subject} at level {level}. Connect your API key for richer explanations."
+        return f"### {topic}\nThis is placeholder content for {subject} at level {level}. Connect an OpenAI API key for richer explanations."
 
     def generate_question(self, subject:str, topic:str, level:int)->Dict[str,Any]:
         if self.client:
