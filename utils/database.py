@@ -230,3 +230,13 @@ class DatabaseManager:
                 """, (today.strftime("%Y-%m-%d"), uid))
             
             conn.commit()
+
+    
+    def ensure_user_topic_entry(self, uid: int, subject: str, topic: str, level: int = 1):
+        with sqlite3.connect(self.db_path) as conn:
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT OR IGNORE INTO user_progress (user_id, subject, topic, current_level, total_questions, correct_answers)
+                VALUES (?, ?, ?, ?, 0, 0)
+            """, (uid, subject, topic, level))
+            conn.commit()
