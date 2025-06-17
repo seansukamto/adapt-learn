@@ -9,7 +9,7 @@ def nav_menu():
     user = db.get_user(st.session_state.user_id)
     st.write(f"👋 Welcome, **{user['name']}**")
     st.write(f"Learning Style: {user['learning_style']}")
-    page = st.selectbox("Choose section:", ["📊 Dashboard", "📚 Learn", "🧩 Quiz", "📈 Progress", "⚙️ Settings"])
+    page = st.selectbox("Choose section:", ["📊 Dashboard", "📚 Learn", "🧩 Quiz", "📤 Upload", "📈 Progress", "⚙️ Settings"])
     if st.button("Logout"):
         st.session_state.clear()
         st.rerun()

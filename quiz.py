@@ -265,6 +265,9 @@ def show():
                         st.markdown(f"_Explanation:_ {entry['explanation']}")
                     st.markdown("---")
 
+            st.markdown("Here is your skill prediction, based on all previous attempts including the latest one.")
+            show_skill_prediction()
+
             st.session_state.quiz_state = {}
         return
 
@@ -310,3 +313,28 @@ def show():
         qs["level"] = adaptive_engine.adjust_difficulty(qs["level"], correct, qs["n"], qs["correct"])
         qs["q"] = None
         st.rerun()
+
+from utils.skill_predictor import SkillPredictor, get_prediction_summary
+import pandas as pd
+
+def show_skill_prediction():
+    st.subheader("🧠 Predicted Skill Level")
+
+    try:
+        with st.spinner("🔄 Training model and predicting your skill level..."):
+            predictor = SkillPredictor()
+            predictor.process_datasets_and_train()
+
+            test_df = pd.read_csv("utils/competency_v2_test.csv")
+            predictions = predictor.predict(test_df)
+
+            summary = get_prediction_summary(predictions)
+        
+        st.success("✅ Prediction complete!")
+        st.markdown(summary)
+
+    except Exception as e:
+        st.error("⚠️ Failed to generate skill prediction.")
+        st.exception(e)
+
+

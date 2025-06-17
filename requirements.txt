@@ -1,6 +1,9 @@
-streamlit
+python-docx
+numpy
+openai
 pandas
 plotly
-openai
 PyPDF2
-python-docx
+scikit_learn
+streamlit
+tensorflow

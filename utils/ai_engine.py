@@ -40,21 +40,68 @@ class AIEngine:
         return {"question": f"Sample {topic} question", "options": options,
                 "correct_answer": correct, "explanation": "placeholder"}
 
+    # def generate_quiz_questions(self, content: str) -> List[Dict[str, Any]]:
+    #     """
+    #     Generates multiple-choice quiz questions based on the provided content.
+    #     """
+    #     # Example implementation (replace with actual AI logic)
+    #     questions = [
+    #         {
+    #             "question": "What is the main topic of the content?",
+    #             "options": ["Option A", "Option B", "Option C", "Option D"],
+    #             "correct_answer": "Option A",
+    #             "explanation": "Explanation for the correct answer."
+    #         },
+    #         # Add more questions dynamically based on content
+    #     ]
+    #     return questions
     def generate_quiz_questions(self, content: str) -> List[Dict[str, Any]]:
         """
-        Generates multiple-choice quiz questions based on the provided content.
+        Uses OpenAI to generate multiple-choice questions from the given content.
+        Falls back to hardcoded questions if no API key or failure.
         """
-        # Example implementation (replace with actual AI logic)
-        questions = [
+        if self.client:
+            prompt = (
+                "Based on the following learning content, generate 5 multiple choice questions in JSON format. "
+                "Each question should include the question text, 4 options, the correct answer, and an explanation.\n\n"
+                f"Content:\n{content}\n\n"
+                "Respond in this format:\n"
+                "[\n"
+                "  {\n"
+                "    \"question\": \"...\",\n"
+                "    \"options\": [\"A\", \"B\", \"C\", \"D\"],\n"
+                "    \"correct_answer\": \"A\",\n"
+                "    \"explanation\": \"...\"\n"
+                "  },\n"
+                "  ...\n"
+                "]"
+            )
+            try:
+                resp = self.client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=800,
+                    temperature=0.7,
+                )
+                return json.loads(resp.choices[0].message.content)
+            except Exception as e:
+                st.error(f"AI generation failed: {e}")
+
+        # Fallback if no API or error
+        return [
             {
-                "question": "What is the main topic of the content?",
+                "question": "What is the main idea of the text?",
                 "options": ["Option A", "Option B", "Option C", "Option D"],
                 "correct_answer": "Option A",
-                "explanation": "Explanation for the correct answer."
+                "explanation": "This is a placeholder question. Connect an OpenAI API key for real generation."
             },
-            # Add more questions dynamically based on content
+            {
+                "question": "Which of the following was mentioned?",
+                "options": ["Option A", "Option B", "Option C", "Option D"],
+                "correct_answer": "Option B",
+                "explanation": "Placeholder explanation for demo purposes."
+            }
         ]
-        return questions
 
     def generate_similar_questions(self, incorrect_questions: List[str]) -> List[Dict[str, Any]]:
         """

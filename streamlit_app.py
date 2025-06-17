@@ -1,6 +1,6 @@
 
 import streamlit as st
-import dashboard, learn, quiz, progress, settings
+import dashboard, learn, quiz, upload, progress, settings
 from components.user_login import show_user_login
 from components.navbar import nav_menu
 
@@ -32,6 +32,8 @@ def main():
         elif page == "🧩 Quiz":
             # page_quiz()
             quiz.show()
+        elif page == "📤 Upload":
+            upload.show()
         elif page == "📈 Progress":
             # page_progress()
             progress.show()

@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler 
 from sklearn.metrics import classification_report, confusion_matrix
-from neural_network import FFNeuralNetwork
+from utils.neural_network import FFNeuralNetwork
 
 """Since the resulting matrices are huge, use this to get the full representation instead of seeing a ...
     np.set_printoptions(threshold=np.inf)
@@ -21,7 +21,7 @@ class SkillPredictor:
     """Note: SkillPredictor is meant to be process and trained ONCE: as a result if a new dataset is used, make a new object.
         However, predict() can be called multiple times.
     """
-    def __init__(self, train_data_name="competency_v2_train.csv", test_data_name="competency_v2_test.csv"):
+    def __init__(self, train_data_name="utils/competency_v2_train.csv", test_data_name="utils/competency_v2_test.csv"):
         """ Creates a SkillPredictor object 
             1. Initialises the train and test data set (make sure to get the location right!)
             2. Processes them into input feature vectors of R^d, where d is the number of features
@@ -124,10 +124,36 @@ def sample_main():
     predictor = SkillPredictor()
     predictor.process_datasets_and_train()
     
-    test_df = pd.read_csv("competency_v2_test.csv")
+    test_df = pd.read_csv("utils/competency_v2_test.csv")
     predicted_skill_levels = predictor.predict(test_df)
 
     print("Predicted skill levels for test set:")
     print(predicted_skill_levels)
+
+    return predicted_skill_levels
     
 ## sample_main()
+
+def get_prediction_summary(predicted_levels: np.ndarray, confidence: int = 97) -> str:
+
+    predicted_level = int(np.round(np.mean(predicted_levels)))  
+
+    explanation = {
+        1: "Level 1 indicates a beginner understanding. Consider reviewing foundational concepts.",
+        2: "Level 2 means you're progressing but still building your core knowledge.",
+        3: "Level 3 indicates a solid understanding. You're doing well but can aim higher!",
+        4: "Level 4 suggests you're nearing mastery. Great job!",
+        5: "Level 5 means you're operating at an advanced level—excellent work!"
+    }
+
+    return f"""
+🔍 **Your Predicted Skill Level Summary:**
+
+✅ **Predicted Skill Level:** Level {predicted_level}
+
+📈 **How confident are we?**
+Based on how the AI model performed on similar data, it was able to correctly predict the skill level **{confidence}%** of the time.
+
+🧠 **What does Level {predicted_level} mean?**
+{explanation.get(predicted_level, "No explanation available.")}
+""".strip()
