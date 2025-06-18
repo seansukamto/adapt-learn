@@ -48,31 +48,32 @@ def show():
         if st.button("Generate Quiz"):
             quiz_questions = ai_engine.generate_quiz_questions(content)
             st.session_state.quiz_questions = quiz_questions
-            st.session_state.quiz_attempts = []
-            if quiz_questions:
-                st.header("🧪 Quiz")
+            st.session_state.quiz_submitted = False
 
-                user_answers = []
-                correct_count = 0
+        if "quiz_questions" in st.session_state and st.session_state.quiz_questions:
+            st.header("🧪 Quiz")
+            user_answers = []
+            correct_count = 0
 
-                with st.form("quiz_form"):
-                    for i, q in enumerate(quiz_questions):
-                        st.markdown(f"**Q{i+1}:** {q['question']}")
-                        ans = st.radio("Choose an answer:", q["options"], key=f"q_{i}")
-                        user_answers.append((ans, q))
-                        st.markdown("---")
+            for i, q in enumerate(st.session_state.quiz_questions):
+                st.markdown(f"**Q{i+1}:** {q['question']}")
+                selected = st.radio("Choose an answer:", q["options"], key=f"q_{i}")
+                user_answers.append((selected, q))
+                st.markdown("---")
 
-                    submitted = st.form_submit_button("Submit Answers")
+            if st.button("Submit Answers") and not st.session_state.get("quiz_submitted", False):
+                st.session_state.quiz_submitted = True
+                st.session_state.quiz_answers = user_answers  # Save for result display
 
-                if submitted:
-                    st.subheader("📊 Results")
-                    for i, (user_ans, q) in enumerate(user_answers):
-                        st.markdown(f"**Q{i+1}:** {q['question']}")
-                        if user_ans == q["correct"]:
-                            st.success(f"✅ Correct! ({user_ans})")
-                            correct_count += 1
-                        else:
-                            st.error(f"❌ Incorrect. You chose {user_ans}. Correct: {q['correct']}")
-                            st.info(f"💡 {q['explanation']}")
-                    st.markdown(f"### 🧠 Your Score: **{correct_count}/{len(quiz_questions)}** ({(correct_count/len(quiz_questions))*100:.1f}%)")
-                    
+        if st.session_state.get("quiz_submitted", False):
+            st.subheader("📊 Results")
+            correct_count = 0
+            for i, (user_ans, q) in enumerate(st.session_state.quiz_answers):
+                st.markdown(f"**Q{i+1}:** {q['question']}")
+                if user_ans == q["correct_answer"]:
+                    st.success(f"✅ Correct! ({user_ans})")
+                    correct_count += 1
+                else:
+                    st.error(f"❌ Incorrect. You chose {user_ans}. Correct: {q['correct_answer']}")
+                    st.info(f"💡 {q['explanation']}")
+            st.markdown(f"### 🧠 Your Score: **{correct_count}/{len(st.session_state.quiz_questions)}** ({(correct_count/len(st.session_state.quiz_questions))*100:.1f}%)")
