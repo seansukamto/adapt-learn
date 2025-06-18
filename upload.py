@@ -5,7 +5,6 @@ from utils.adaptive_logic import AdaptiveEngine
 db = DatabaseManager()
 adaptive_engine = AdaptiveEngine()
 
-# ✅ Only try to access secrets; do not use os or env
 try:
     key = st.secrets["OPENAI_API_KEY"]
 except Exception:
@@ -50,5 +49,30 @@ def show():
             quiz_questions = ai_engine.generate_quiz_questions(content)
             st.session_state.quiz_questions = quiz_questions
             st.session_state.quiz_attempts = []
-            st.success("🎯 Quiz generated! Head over to the Quiz page to begin.")
-        
+            if quiz_questions:
+                st.header("🧪 Quiz")
+
+                user_answers = []
+                correct_count = 0
+
+                with st.form("quiz_form"):
+                    for i, q in enumerate(quiz_questions):
+                        st.markdown(f"**Q{i+1}:** {q['question']}")
+                        ans = st.radio("Choose an answer:", q["options"], key=f"q_{i}")
+                        user_answers.append((ans, q))
+                        st.markdown("---")
+
+                    submitted = st.form_submit_button("Submit Answers")
+
+                if submitted:
+                    st.subheader("📊 Results")
+                    for i, (user_ans, q) in enumerate(user_answers):
+                        st.markdown(f"**Q{i+1}:** {q['question']}")
+                        if user_ans == q["correct"]:
+                            st.success(f"✅ Correct! ({user_ans})")
+                            correct_count += 1
+                        else:
+                            st.error(f"❌ Incorrect. You chose {user_ans}. Correct: {q['correct']}")
+                            st.info(f"💡 {q['explanation']}")
+                    st.markdown(f"### 🧠 Your Score: **{correct_count}/{len(quiz_questions)}** ({(correct_count/len(quiz_questions))*100:.1f}%)")
+                    

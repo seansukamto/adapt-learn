@@ -40,21 +40,7 @@ class AIEngine:
         return {"question": f"Sample {topic} question", "options": options,
                 "correct_answer": correct, "explanation": "placeholder"}
 
-    # def generate_quiz_questions(self, content: str) -> List[Dict[str, Any]]:
-    #     """
-    #     Generates multiple-choice quiz questions based on the provided content.
-    #     """
-    #     # Example implementation (replace with actual AI logic)
-    #     questions = [
-    #         {
-    #             "question": "What is the main topic of the content?",
-    #             "options": ["Option A", "Option B", "Option C", "Option D"],
-    #             "correct_answer": "Option A",
-    #             "explanation": "Explanation for the correct answer."
-    #         },
-    #         # Add more questions dynamically based on content
-    #     ]
-    #     return questions
+
     def generate_quiz_questions(self, content: str) -> List[Dict[str, Any]]:
         """
         Uses OpenAI to generate multiple-choice questions from the given content.
@@ -88,20 +74,21 @@ class AIEngine:
                 st.error(f"AI generation failed: {e}")
 
         # Fallback if no API or error
-        return [
-            {
-                "question": "What is the main idea of the text?",
-                "options": ["Option A", "Option B", "Option C", "Option D"],
-                "correct_answer": "Option A",
-                "explanation": "This is a placeholder question. Connect an OpenAI API key for real generation."
-            },
-            {
-                "question": "Which of the following was mentioned?",
-                "options": ["Option A", "Option B", "Option C", "Option D"],
-                "correct_answer": "Option B",
-                "explanation": "Placeholder explanation for demo purposes."
-            }
-        ]
+        return None
+        # return [
+        #     {
+        #         "question": "What is the main idea of the text?",
+        #         "options": ["Option A", "Option B", "Option C", "Option D"],
+        #         "correct_answer": "Option A",
+        #         "explanation": "This is a placeholder question. Connect an OpenAI API key for real generation."
+        #     },
+        #     {
+        #         "question": "Which of the following was mentioned?",
+        #         "options": ["Option A", "Option B", "Option C", "Option D"],
+        #         "correct_answer": "Option B",
+        #         "explanation": "Placeholder explanation for demo purposes."
+        #     }
+        # ]
 
     def generate_similar_questions(self, incorrect_questions: List[str]) -> List[Dict[str, Any]]:
         """
